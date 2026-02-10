@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Color Dot Puzzle - Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1A1A2E;
+            color: white;
+        }
+        .icon-container {
+            margin: 20px 0;
+        }
+        canvas {
+            border: 2px solid #4ECDC4;
+            background: white;
+            margin: 10px;
+        }
+        button {
+            background: #4ECDC4;
+            color: #1A1A2E;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #FFE66D;
+        }
+        h2 {
+            color: #4ECDC4;
+        }
+        .instructions {
+            background: #16213E;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Color Dot Puzzle - App Icon Generator</h1>
+    
+    <div class="instructions">
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Click the buttons below to generate each icon</li>
+            <li>Right-click on each canvas and "Save image as..."</li>
+            <li>Save with the exact names shown</li>
+            <li>Put all images in the <code>assets/</code> folder</li>
+        </ol>
+    </div>
+
+    <div class="icon-container">
+        <h2>1. App Icon (1024x1024)</h2>
+        <button onclick="generateIcon()">Generate icon.png</button>
+        <br>
+        <canvas id="icon" width="1024" height="1024"></canvas>
+    </div>
+
+    <div class="icon-container">
+        <h2>2. Adaptive Icon (1024x1024) - Android</h2>
+        <button onclick="generateAdaptiveIcon()">Generate adaptive-icon.png</button>
+        <br>
+        <canvas id="adaptive" width="1024" height="1024"></canvas>
+    </div>
+
+    <div class="icon-container">
+        <h2>3. Splash Screen (1242x2436)</h2>
+        <button onclick="generateSplash()">Generate splash.png</button>
+        <br>
+        <canvas id="splash" width="1242" height="2436"></canvas>
+    </div>
+
+    <div class="icon-container">
+        <h2>4. Favicon (48x48)</h2>
+        <button onclick="generateFavicon()">Generate favicon.png</button>
+        <br>
+        <canvas id="favicon" width="48" height="48"></canvas>
+    </div>
+
+    <script>
+        function generateIcon() {
+            const canvas = document.getElementById('icon');
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#1A1A2E';
+            ctx.fillRect(0, 0, 1024, 1024);
+            
+            // Create a 3x3 grid pattern with colored dots
+            const dotSize = 100;
+            const spacing = 200;
+            const startX = 250;
+            const startY = 250;
+            
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D'];
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#2A2A3E';
+            ctx.lineWidth = 3;
+            for (let i = 0; i <= 3; i++) {
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(startX, startY + i * spacing);
+                ctx.lineTo(startX + 3 * spacing, startY + i * spacing);
+                ctx.stroke();
+                
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(startX + i * spacing, startY);
+                ctx.lineTo(startX + i * spacing, startY + 3 * spacing);
+                ctx.stroke();
+            }
+            
+            // Draw connecting lines
+            ctx.strokeStyle = '#4ECDC4';
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(startX + spacing, startY + spacing);
+            ctx.lineTo(startX + 2 * spacing, startY + spacing);
+            ctx.lineTo(startX + 2 * spacing, startY + 2 * spacing);
+            ctx.stroke();
+            
+            // Draw dots
+            [[startX + spacing, startY + spacing, '#FF6B6B'],
+             [startX + 2 * spacing, startY + 2 * spacing, '#4ECDC4'],
+             [startX + spacing, startY + 2 * spacing, '#FFE66D']].forEach(([x, y, color]) => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1A1A2E';
+                ctx.lineWidth = 8;
+                ctx.stroke();
+            });
+        }
+
+        function generateAdaptiveIcon() {
+            const canvas = document.getElementById('adaptive');
+            const ctx = canvas.getContext('2d');
+            
+            // Background (will be masked on Android)
+            ctx.fillStyle = '#1A1A2E';
+            ctx.fillRect(0, 0, 1024, 1024);
+            
+            // Simple centered design that works with circular mask
+            const centerX = 512;
+            const centerY = 512;
+            const dotSize = 80;
+            
+            // Draw three colored dots in triangle formation
+            const dots = [
+                {x: centerX, y: centerY - 150, color: '#FF6B6B'},
+                {x: centerX - 130, y: centerY + 75, color: '#4ECDC4'},
+                {x: centerX + 130, y: centerY + 75, color: '#FFE66D'}
+            ];
+            
+            // Connecting lines
+            ctx.strokeStyle = 'rgba(78, 205, 196, 0.5)';
+            ctx.lineWidth = 25;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(dots[0].x, dots[0].y);
+            ctx.lineTo(dots[1].x, dots[1].y);
+            ctx.lineTo(dots[2].x, dots[2].y);
+            ctx.lineTo(dots[0].x, dots[0].y);
+            ctx.stroke();
+            
+            // Draw dots
+            dots.forEach(dot => {
+                ctx.fillStyle = dot.color;
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1A1A2E';
+                ctx.lineWidth = 10;
+                ctx.stroke();
+            });
+        }
+
+        function generateSplash() {
+            const canvas = document.getElementById('splash');
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 2436);
+            gradient.addColorStop(0, '#1A1A2E');
+            gradient.addColorStop(1, '#16213E');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1242, 2436);
+            
+            // App name
+            ctx.fillStyle = '#4ECDC4';
+            ctx.font = 'bold 120px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Color Dot Puzzle', 621, 1100);
+            
+            // Icon in center
+            const centerX = 621;
+            const centerY = 1218;
+            const dotSize = 100;
+            
+            // Grid background
+            ctx.strokeStyle = '#2A2A3E';
+            ctx.lineWidth = 4;
+            const gridSize = 400;
+            const cellSize = gridSize / 4;
+            const startX = centerX - gridSize / 2;
+            const startY = centerY - gridSize / 2;
+            
+            for (let i = 0; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY + i * cellSize);
+                ctx.lineTo(startX + gridSize, startY + i * cellSize);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(startX + i * cellSize, startY);
+                ctx.lineTo(startX + i * cellSize, startY + gridSize);
+                ctx.stroke();
+            }
+            
+            // Dots and path
+            ctx.strokeStyle = '#FFE66D';
+            ctx.lineWidth = 25;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(startX + cellSize, startY + cellSize);
+            ctx.lineTo(startX + cellSize * 3, startY + cellSize * 3);
+            ctx.stroke();
+            
+            [[startX + cellSize, startY + cellSize, '#FF6B6B'],
+             [startX + cellSize * 3, startY + cellSize * 3, '#4ECDC4']].forEach(([x, y, color]) => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1A1A2E';
+                ctx.lineWidth = 12;
+                ctx.stroke();
+            });
+            
+            // Tagline
+            ctx.fillStyle = '#A8DADC';
+            ctx.font = '60px Arial';
+            ctx.fillText('Connect. Solve. Win!', 621, 1800);
+        }
+
+        function generateFavicon() {
+            const canvas = document.getElementById('favicon');
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#1A1A2E';
+            ctx.fillRect(0, 0, 48, 48);
+            
+            // Simple 2 dots connected
+            ctx.strokeStyle = '#4ECDC4';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(12, 12);
+            ctx.lineTo(36, 36);
+            ctx.stroke();
+            
+            // Dots
+            [[12, 12, '#FF6B6B'], [36, 36, '#FFE66D']].forEach(([x, y, color]) => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Generate all on load
+        window.onload = function() {
+            generateIcon();
+            generateAdaptiveIcon();
+            generateSplash();
+            generateFavicon();
+        };
+    </script>
+
+    <div class="instructions" style="margin-top: 40px;">
+        <h2>After Saving All Images:</h2>
+        <ol>
+            <li>Create a folder named <code>assets</code> in your project directory</li>
+            <li>Put all 4 images in the assets folder</li>
+            <li>Make sure the names match exactly:
+                <ul>
+                    <li>icon.png</li>
+                    <li>adaptive-icon.png</li>
+                    <li>splash.png</li>
+                    <li>favicon.png</li>
+                </ul>
+            </li>
+            <li>Your app.json file is already configured to use these!</li>
+        </ol>
+    </div>
+</body>
+</html>

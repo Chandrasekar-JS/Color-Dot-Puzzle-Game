@@ -4,9 +4,15 @@
     "slug": "color-dot-puzzle",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#1A1A2E",
     "primaryColor": "#4ECDC4",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A1A2E"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.colordotpuzzle.game",
@@ -16,9 +22,18 @@
       "package": "com.colordotpuzzle.game",
       "versionCode": 1,
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A1A2E"
       }
     },
-    "plugins": []
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "b7adeb86-8b05-4b68-bca6-ca7d90199090"
+      }
+    }
   }
 }
