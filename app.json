@@ -2,7 +2,7 @@
   "expo": {
     "name": "Color Dot Puzzle",
     "slug": "color-dot-puzzle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.colordotpuzzle.game",
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.0.1"
     },
     "android": {
       "package": "com.colordotpuzzle.game",
@@ -24,7 +24,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A1A2E"
-      }
+      },
+      "kotlinVersion": "2.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
