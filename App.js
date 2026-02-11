@@ -445,11 +445,11 @@ const ColorDotGame = () => {
     const lastPoint = activePath.points[activePath.points.length - 1];
     const dist = distance(lastPoint, { x: constrainedX, y: constrainedY });
     
-    // Only add point if moved enough (prevents too many points)
-    if (dist > 8) {
+    // Lower threshold for more responsive drawing
+    if (dist > 3) {
       const newPoints = [...activePath.points, { x: constrainedX, y: constrainedY }];
-      // Simplify path to keep it smooth and controlled
-      const simplified = simplifyPath(newPoints, 15);
+      // Less aggressive simplification for smoother lines
+      const simplified = simplifyPath(newPoints, 8);
       
       setActivePath({
         ...activePath,
