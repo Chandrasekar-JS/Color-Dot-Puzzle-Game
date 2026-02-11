@@ -1,22 +1,23 @@
 {
   "name": "color-dot-puzzle",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "latest",
-    "expo-av": "latest",
-    "expo-status-bar": "latest",
-    "react": "18.3.1",
-    "react-native": "0.76.3",
-    "react-native-svg": "latest"
+    "expo": "~51.0.28",
+    "expo-av": "~14.0.7",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-svg": "15.2.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.0"
+    "@babel/core": "^7.20.0"
   },
   "private": true
 }
