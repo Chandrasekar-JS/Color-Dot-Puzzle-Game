@@ -6,27 +6,28 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  Vibration,
 } from 'react-native';
 import Svg, { Circle, Path, Line, G } from 'react-native-svg';
 import { Audio } from 'expo-av';
 
 const { width: screenWidth } = Dimensions.get('window');
 const GRID_SIZE = 6;
-const DOT_RADIUS = 12; // Made smaller
+const DOT_RADIUS = 12;
 const PADDING = 20;
 const CANVAS_WIDTH = screenWidth - (PADDING * 2);
 const CELL_SIZE = CANVAS_WIDTH / GRID_SIZE;
 
 // Darker, more distinct colors
 const COLORS = {
-  RED: '#CC2936',      // Dark red
-  CYAN: '#2A9D8F',     // Dark teal
-  YELLOW: '#E9C46A',   // Muted yellow
-  BLUE: '#264653',     // Dark navy blue
-  PURPLE: '#7209B7',   // Deep purple
-  ORANGE: '#F77F00',   // Dark orange
-  GREEN: '#06A77D',    // Dark green
-  PINK: '#D81159',     // Deep pink
+  RED: '#CC2936',
+  CYAN: '#2A9D8F',
+  YELLOW: '#E9C46A',
+  BLUE: '#264653',
+  PURPLE: '#7209B7',
+  ORANGE: '#F77F00',
+  GREEN: '#06A77D',
+  PINK: '#D81159',
 };
 
 // Level configurations - 5 puzzles per level
@@ -237,132 +238,93 @@ const ColorDotGame = () => {
   const [showHint, setShowHint] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [totalMoves, setTotalMoves] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const timerRef = useRef(null);
-  const soundsRef = useRef({});
+  const soundRef = useRef(null);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setTimer((prev) => prev + 1);
     }, 1000);
 
+    // Setup audio
+    setupAudio();
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
     };
   }, [currentLevel]);
 
-  useEffect(() => {
-    checkCompletion();
-  }, [paths]);
-
-  // Load sounds
-  useEffect(() => {
-    loadSounds();
-    return () => {
-      // Cleanup sounds
-      Object.values(soundsRef.current).forEach(sound => {
-        if (sound) sound.unloadAsync();
-      });
-    };
-  }, []);
-
-  const loadSounds = async () => {
+  const setupAudio = async () => {
     try {
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
+        shouldDuckAndroid: true,
       });
-      // Sounds will be generated programmatically using Web Audio API
-      // For now, we'll use simple beep sounds
     } catch (error) {
-      console.log('Error loading sounds:', error);
+      console.log('Audio setup error:', error);
+    }
+  };
+
+  const playHaptic = (type) => {
+    // Vibration feedback
+    const patterns = {
+      cross: [50],           
+      connect: [30],         
+      puzzle: [50, 50, 50],  
+      level: [100, 50, 100], 
+    };
+    
+    try {
+      Vibration.vibrate(patterns[type] || [50]);
+    } catch (error) {
+      console.log('Vibration not supported');
     }
   };
 
   const playSound = async (type) => {
-    if (!soundEnabled) return;
+    // Play both vibration AND sound
+    playHaptic(type);
     
     try {
-      // Create simple beep sounds using different frequencies
+      // Create and play sound
+      const soundObject = new Audio.Sound();
+      
+      // Different frequencies for different events
       const frequencies = {
-        cross: 200,      // Low beep for error
-        connect: 600,    // Mid beep for connection
-        puzzle: 800,     // High beep for puzzle complete
-        level: 1000,     // Highest for level complete
+        cross: '200',      // Low beep
+        connect: '600',    // Mid beep
+        puzzle: '800',     // High beep
+        level: '1000',     // Highest beep
       };
       
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: `data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZizYIHW+98+mcTwwOVKnn77RgGgU7k9n0y3oqBSp+y/LZjDoHGW27++WPTAwNUKvm8LVhGgU0jdrzz38oAxx7ye7bkDkGHmu78OScSwsNTarq7K9aFgo9mN701f8qLjNywfDej0ALEVux7OupVBMHQJvd8sBqHQU2kNXyx3wqBSd6yPDXjTkKGG+88OWbUQ0PU6vo87JeFgU8l9301fosByd5yO7ajz0JGG6/++iaUQ4STK3o8a1cFgU5ldf0yHsoByh2x+/YjDkJGG7A++mcUg4RTK3o8K5cFQU7lNr0y3ssCSh6ye/aij0JGW3A/OebUQwOTqvk8bJeGQU9mt300v0qBSV5yO7YizwGGm++/OabUQ0OUK3o8K5dFgU8l9r1y3orByh4yPDYjTsJGmzB/OicUgwOTazk8bFcGAU9mdr1zH0qBSV4x+7Yiz0IG26//OebUg0OUqzn8LFcGAU+mNz1zH0qBSV5yO/YjDwJG22//OebUQwOTqzm8K9dGAU/mN71zH0pBSZ5yPDYjj4JHG3B/OebUQ0PU63o8a5dGAY/mdz1zX0pBSZ4yO/Xjj0KHG3A++ibUgwOTqzn8K9eGQU/md/1zH0pBSZ6yPDZjj4KHG3B/OecUg4PU63p8a5dGQVAmd/1zH4pBSZ5yO/Xjj4JHG3B/OicUgwOT6zn8K9dGAU/md/1zH4pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md/1zX4pBSZ5yO/Xjz4JHG3A++icUgwOTqzn8LBeGQU/md/1zH4pBSV5yO/Xjz4JHG3A++icUgwOTqzn8K9eGQU/md/1zH4pBSZ5yO/Xjz4JHG3A++icUgwOTqzn8K9eGQU/md/1zH4pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9eGQU/md/1zH4pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9eGQU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ibUgwOTqzn8K9dGAU/md71zH0pBSZ5yO/Xjz4JHG3A++ib`
+      const freq = frequencies[type] || '440';
+      
+      // Simple beep sound using data URI
+      await soundObject.loadAsync({
+        uri: `data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=`
       });
       
-      await sound.playAsync();
-      sound.setOnPlaybackStatusUpdate((status) => {
+      await soundObject.playAsync();
+      
+      // Cleanup after playing
+      soundObject.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) {
-          sound.unloadAsync();
+          soundObject.unloadAsync();
         }
       });
     } catch (error) {
-      console.log('Error playing sound:', error);
+      console.log('Sound playback error:', error);
+      // If sound fails, at least vibration will work
     }
   };
 
-  // Simplify path using Douglas-Peucker algorithm
-  const simplifyPath = (points, tolerance = 10) => {
-    if (points.length <= 2) return points;
-
-    const sqDistance = (p1, p2) => {
-      const dx = p1.x - p2.x;
-      const dy = p1.y - p2.y;
-      return dx * dx + dy * dy;
-    };
-
-    const pointToSegmentDistance = (p, p1, p2) => {
-      let x = p1.x, y = p1.y;
-      let dx = p2.x - x;
-      let dy = p2.y - y;
-
-      if (dx !== 0 || dy !== 0) {
-        const t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
-        if (t > 1) {
-          x = p2.x;
-          y = p2.y;
-        } else if (t > 0) {
-          x += dx * t;
-          y += dy * t;
-        }
-      }
-
-      dx = p.x - x;
-      dy = p.y - y;
-      return dx * dx + dy * dy;
-    };
-
-    const simplifyDouglasPeucker = (points, sqTolerance) => {
-      const len = points.length;
-      if (len <= 2) return points;
-
-      let index = -1;
-      let maxSqDist = sqTolerance;
-
-      for (let i = 1; i < len - 1; i++) {
-        const sqDist = pointToSegmentDistance(points[i], points[0], points[len - 1]);
-        if (sqDist > maxSqDist) {
-          index = i;
-          maxSqDist = sqDist;
-        }
-      }
-
-      if (index > -1) {
-        const left = simplifyDouglasPeucker(points.slice(0, index + 1), sqTolerance);
-        const right = simplifyDouglasPeucker(points.slice(index), sqTolerance);
-        return left.slice(0, -1).concat(right);
-      }
-
-      return [points[0], points[len - 1]];
-    };
-
-    return simplifyDouglasPeucker(points, tolerance * tolerance);
-  };
+  useEffect(() => {
+    checkCompletion();
+  }, [paths]);
 
   const gridToScreen = (row, col) => {
     return {
@@ -393,7 +355,6 @@ const ColorDotGame = () => {
   const pathsIntersect = (path1, path2) => {
     if (!path1 || !path2 || path1.length < 2 || path2.length < 2) return false;
     
-    // Check if any line segment in path1 intersects with any in path2
     for (let i = 0; i < path1.length - 1; i++) {
       for (let j = 0; j < path2.length - 1; j++) {
         if (lineSegmentsIntersect(
@@ -437,25 +398,12 @@ const ColorDotGame = () => {
 
     const { locationX, locationY } = event.nativeEvent;
     
-    // Constrain to canvas boundaries
-    const constrainedX = Math.max(0, Math.min(CANVAS_WIDTH, locationX));
-    const constrainedY = Math.max(0, Math.min(CANVAS_WIDTH, locationY));
-    
-    // Add point to path (free-flow drawing)
-    const lastPoint = activePath.points[activePath.points.length - 1];
-    const dist = distance(lastPoint, { x: constrainedX, y: constrainedY });
-    
-    // Lower threshold for more responsive drawing
-    if (dist > 3) {
-      const newPoints = [...activePath.points, { x: constrainedX, y: constrainedY }];
-      // Less aggressive simplification for smoother lines
-      const simplified = simplifyPath(newPoints, 8);
-      
-      setActivePath({
-        ...activePath,
-        points: simplified,
-      });
-    }
+    // TRUE FREE-FLOW - No constraints, no threshold!
+    // Just add every touch point directly
+    setActivePath({
+      ...activePath,
+      points: [...activePath.points, { x: locationX, y: locationY }],
+    });
   };
 
   const handleTouchEnd = (event) => {
@@ -464,7 +412,6 @@ const ColorDotGame = () => {
     const { locationX, locationY } = event.nativeEvent;
     const dotInfo = findDotAtPosition(locationX, locationY);
     
-    // Check if ended on correct dot
     if (dotInfo && dotInfo.dot.color === activePath.color) {
       const isValidEnd = (
         (activePath.startPosition === 'start' && dotInfo.position === 'end') ||
@@ -472,10 +419,8 @@ const ColorDotGame = () => {
       );
       
       if (isValidEnd) {
-        // Add final point at dot center
         const finalPath = [...activePath.points, dotInfo.pos];
         
-        // Check for intersections with other paths
         let intersects = false;
         for (const [color, path] of Object.entries(paths)) {
           if (color !== activePath.color && pathsIntersect(finalPath, path)) {
@@ -485,15 +430,13 @@ const ColorDotGame = () => {
         }
         
         if (!intersects) {
-          // Success! Play success sound
-          playSound('connect');
+          playSound('connect'); // Success sound + vibration
           setPaths({
             ...paths,
             [activePath.color]: finalPath,
           });
         } else {
-          // Intersection detected! Play error sound
-          playSound('cross');
+          playSound('cross'); // Error sound + vibration
         }
       }
     }
@@ -503,7 +446,6 @@ const ColorDotGame = () => {
 
   const checkCompletion = () => {
     if (Object.keys(paths).length === dots.length) {
-      // Check no intersections
       const pathArray = Object.values(paths);
       let allValid = true;
       
@@ -520,7 +462,7 @@ const ColorDotGame = () => {
       if (allValid) {
         setIsComplete(true);
         setTotalMoves(totalMoves + moves);
-        playSound('puzzle'); // Play puzzle complete sound
+        playSound('puzzle'); // Puzzle complete sound + vibration
         if (timerRef.current) clearInterval(timerRef.current);
       }
     }
@@ -530,7 +472,6 @@ const ColorDotGame = () => {
     const currentLevelData = LEVELS[currentLevel];
     
     if (currentPuzzle < currentLevelData.puzzles.length - 1) {
-      // Move to next puzzle in same level
       const nextPuzzleIndex = currentPuzzle + 1;
       setCurrentPuzzle(nextPuzzleIndex);
       setDots(currentLevelData.puzzles[nextPuzzleIndex].dots);
@@ -540,8 +481,7 @@ const ColorDotGame = () => {
       setIsComplete(false);
       setScore((prev) => prev + 50);
     } else if (currentLevel < LEVELS.length - 1) {
-      // Move to next level
-      playSound('level'); // Play level complete sound
+      playSound('level'); // Level complete sound + vibration
       const nextLvl = currentLevel + 1;
       setCurrentLevel(nextLvl);
       setCurrentPuzzle(0);
@@ -553,7 +493,6 @@ const ColorDotGame = () => {
       setIsComplete(false);
       setScore((prev) => prev + 100);
     } else {
-      // All levels complete!
       playSound('level');
       setGameComplete(true);
       setIsComplete(false);
@@ -562,7 +501,7 @@ const ColorDotGame = () => {
 
   const showHintPath = () => {
     setShowHint(true);
-    setTimeout(() => setShowHint(false), 3000); // Hide after 3 seconds
+    setTimeout(() => setShowHint(false), 3000);
   };
 
   const getIQLevel = () => {
@@ -591,10 +530,6 @@ const ColorDotGame = () => {
     setShowInstructions(true);
   };
 
-  const closeLevelComplete = () => {
-    setIsComplete(false);
-  };
-
   const resetLevel = () => {
     setPaths({});
     setActivePath(null);
@@ -609,6 +544,10 @@ const ColorDotGame = () => {
     setPaths(newPaths);
   };
 
+  const closeLevelComplete = () => {
+    setIsComplete(false);
+  };
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -618,9 +557,7 @@ const ColorDotGame = () => {
   const renderPath = (points, color, isActive = false) => {
     if (!points || points.length < 2) return null;
 
-    // Create smooth path string
     let pathString = `M ${points[0].x} ${points[0].y}`;
-    
     for (let i = 1; i < points.length; i++) {
       pathString += ` L ${points[i].x} ${points[i].y}`;
     }
@@ -775,6 +712,18 @@ const ColorDotGame = () => {
             })}
           </Svg>
         </View>
+        
+        {/* Next Button - Visible on screen when complete */}
+        {isComplete && (
+          <TouchableOpacity 
+            style={styles.nextButtonFloat}
+            onPress={nextPuzzle}
+          >
+            <Text style={styles.nextButtonFloatText}>
+              {currentPuzzle < 4 ? 'Next Puzzle →' : 'Next Level →'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Color indicators */}
@@ -811,16 +760,6 @@ const ColorDotGame = () => {
         >
           <Text style={styles.controlButtonText}>💡 Hint</Text>
         </TouchableOpacity>
-        {isComplete && (
-          <TouchableOpacity 
-            style={[styles.controlButton, styles.nextButtonControl]} 
-            onPress={nextPuzzle}
-          >
-            <Text style={styles.nextButtonControlText}>
-              {currentPuzzle < 4 ? 'Next →' : 'Level →'}
-            </Text>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity style={styles.controlButton} onPress={resetLevel}>
           <Text style={styles.controlButtonText}>🔄 Reset</Text>
         </TouchableOpacity>
@@ -895,7 +834,7 @@ const ColorDotGame = () => {
             <View style={styles.instructionTip}>
               <Text style={styles.instructionTipIcon}>💡</Text>
               <Text style={styles.instructionTipText}>
-                Tap a colored circle at the bottom to clear that path
+                Tap a colored circle at the bottom to clear that path. You'll feel vibrations for feedback!
               </Text>
             </View>
             
@@ -1015,11 +954,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: PADDING,
+    position: 'relative',
   },
   svgContainer: {
     backgroundColor: '#16213E',
     borderRadius: 20,
     overflow: 'hidden',
+  },
+  nextButtonFloat: {
+    position: 'absolute',
+    bottom: 20,
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: '#FFE66D',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  nextButtonFloatText: {
+    color: '#1A1A2E',
+    fontSize: 18,
+    fontWeight: '700',
   },
   colorIndicators: {
     flexDirection: 'row',
@@ -1051,26 +1011,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
     gap: 15,
+    flexWrap: 'wrap',
   },
   controlButton: {
     backgroundColor: '#0F3460',
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingHorizontal: 25,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: '#4ECDC4',
   },
   controlButtonText: {
     color: '#4ECDC4',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  nextButtonControl: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#FFE66D',
-  },
-  nextButtonControlText: {
-    color: '#1A1A2E',
     fontSize: 16,
     fontWeight: '700',
   },
